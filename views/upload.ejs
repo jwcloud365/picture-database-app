@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> | Picture Database</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="/static/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="bi bi-images me-2"></i>
+                Picture Database
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="bi bi-house me-1"></i>
+                            Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/upload">
+                            <i class="bi bi-cloud-upload me-1"></i>
+                            Upload
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Main Content -->
+    <main class="container mt-4">
+        <!-- Alert Messages -->
+        <div id="alertContainer"></div>
+
+<!-- Upload Page -->
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Page Header -->
+        <div class="text-center mb-4">
+            <h1 class="display-6 mb-3">
+                <i class="bi bi-cloud-upload text-primary me-2"></i>
+                Upload Pictures
+            </h1>
+            <p class="text-muted">Share your photos by uploading them to your picture database</p>
+        </div>
+        
+        <!-- Upload Form -->
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <!-- File Drop Zone -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Select Pictures</label>
+                        <div id="dropZone" class="border border-2 border-dashed rounded p-5 text-center">
+                            <div id="dropZoneContent">
+                                <i class="bi bi-cloud-upload display-4 text-muted mb-3"></i>
+                                <h5 class="text-muted mb-2">Drag and drop your pictures here</h5>
+                                <p class="text-muted mb-3">or</p>
+                                <input type="file" id="fileInput" name="pictures" multiple accept="image/*" class="d-none">
+                                <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('fileInput').click()">
+                                    <i class="bi bi-folder me-2"></i>
+                                    Browse Files
+                                </button>
+                                <div class="mt-3">
+                                    <small class="text-muted">
+                                        Supported formats: JPEG, PNG, WebP, GIF • Max size: 10MB per file
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- File Preview Area -->
+                    <div id="filePreviewArea" class="mb-4" style="display: none;">
+                        <label class="form-label fw-bold">Selected Files</label>
+                        <div id="filePreviewContainer" class="row">
+                            <!-- File previews will be added here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Description -->
+                    <div class="mb-4">
+                        <label for="description" class="form-label fw-bold">Description (Optional)</label>
+                        <textarea class="form-control" id="description" name="description" rows="3" 
+                                  placeholder="Add a description for your pictures..."></textarea>
+                        <div class="form-text">This description will be applied to all uploaded pictures.</div>
+                    </div>
+                    
+                    <!-- Upload Progress -->
+                    <div id="uploadProgress" class="mb-4" style="display: none;">
+                        <label class="form-label fw-bold">Upload Progress</label>
+                        <div class="progress">
+                            <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                                 role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <div class="d-flex justify-content-between mt-2">
+                            <small id="progressText" class="text-muted">Preparing upload...</small>
+                            <small id="progressPercent" class="text-muted">0%</small>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="d-flex justify-content-between">
+                        <a href="/" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>
+                            Back to Gallery
+                        </a>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="button" id="clearBtn" class="btn btn-outline-warning" style="display: none;">
+                                <i class="bi bi-x-circle me-2"></i>
+                                Clear All
+                            </button>
+                            <button type="submit" id="uploadBtn" class="btn btn-primary" disabled>
+                                <i class="bi bi-cloud-upload me-2"></i>
+                                Upload Pictures
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Upload Tips -->
+        <div class="card mt-4 bg-light">
+            <div class="card-body">
+                <h6 class="card-title">
+                    <i class="bi bi-lightbulb text-warning me-2"></i>
+                    Upload Tips
+                </h6>
+                <ul class="mb-0 small">
+                    <li>You can upload multiple pictures at once</li>
+                    <li>Pictures will be automatically resized for optimal viewing</li>
+                    <li>Thumbnails are generated automatically</li>
+                    <li>Supported formats: JPEG, PNG, WebP, and GIF</li>
+                    <li>Maximum file size is 10MB per picture</li>
+                    <li>You can edit descriptions after uploading</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom CSS for Upload Page -->
+<style>
+    #dropZone {
+        transition: all 0.3s ease;
+        cursor: pointer;
+        background-color: #fafafa;
+    }
+    
+    #dropZone:hover,
+    #dropZone.drag-over {
+        border-color: var(--primary-color);
+        background-color: rgba(0, 123, 255, 0.05);
+    }
+    
+    .file-preview-item {
+        transition: all 0.3s ease;
+    }
+    
+    .file-preview-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .remove-file-btn {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        width: 25px;
+        height: 25px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+    }
+    
+    .progress {
+        height: 10px;
+    }
+    
+    .upload-success {
+        animation: fadeInUp 0.5s ease;
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
+<!-- Upload Page JavaScript -->
+<script>
+// Global variables
+let selectedFiles = [];
+let isUploading = false;
+
+// Initialize upload functionality
+document.addEventListener('DOMContentLoaded', function() {
+    initializeDropZone();
+    initializeFileInput();
+    initializeForm();
+});
+
+/**
+ * Initialize drag and drop functionality
+ */
+function initializeDropZone() {
+    const dropZone = document.getElementById('dropZone');
+    
+    // Prevent default drag behaviors
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+        document.body.addEventListener(eventName, preventDefaults, false);
+    });
+    
+    // Highlight drop zone when item is dragged over it
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, highlight, false);
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, unhighlight, false);
+    });
+    
+    // Handle dropped files
+    dropZone.addEventListener('drop', handleDrop, false);
+    
+    // Handle click on drop zone
+    dropZone.addEventListener('click', function() {
+        document.getElementById('fileInput').click();
+    });
+}
+
+/**
+ * Prevent default drag behaviors
+ */
+function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+}
+
+/**
+ * Highlight drop zone
+ */
+function highlight(e) {
+    document.getElementById('dropZone').classList.add('drag-over');
+}
+
+/**
+ * Remove highlight from drop zone
+ */
+function unhighlight(e) {
+    document.getElementById('dropZone').classList.remove('drag-over');
+}
+
+/**
+ * Handle dropped files
+ */
+function handleDrop(e) {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    
+    handleFiles(files);
+}
+
+/**
+ * Initialize file input
+ */
+function initializeFileInput() {
+    const fileInput = document.getElementById('fileInput');
+    
+    fileInput.addEventListener('change', function(e) {
+        handleFiles(e.target.files);
+    });
+}
+
+/**
+ * Handle selected files
+ */
+function handleFiles(files) {
+    const fileArray = Array.from(files);
+    
+    // Validate files
+    const validFiles = fileArray.filter(file => {
+        // Check file type
+        if (!file.type.startsWith('image/')) {
+            showAlert(`${file.name} is not a valid image file`, 'warning');
+            return false;
+        }
+        
+        // Check file size (10MB limit)
+        if (file.size > 10 * 1024 * 1024) {
+            showAlert(`${file.name} is too large. Maximum size is 10MB`, 'warning');
+            return false;
+        }
+        
+        return true;
+    });
+    
+    if (validFiles.length === 0) {
+        return;
+    }
+    
+    // Add to selected files
+    selectedFiles = [...selectedFiles, ...validFiles];
+    
+    // Update UI
+    updateFilePreview();
+    updateUploadButton();
+}
+
+/**
+ * Update file preview area
+ */
+function updateFilePreview() {
+    const previewArea = document.getElementById('filePreviewArea');
+    const previewContainer = document.getElementById('filePreviewContainer');
+    
+    if (selectedFiles.length === 0) {
+        previewArea.style.display = 'none';
+        return;
+    }
+    
+    previewArea.style.display = 'block';
+    previewContainer.innerHTML = '';
+    
+    selectedFiles.forEach((file, index) => {
+        const col = document.createElement('div');
+        col.className = 'col-md-6 col-lg-4 mb-3';
+        
+        col.innerHTML = `
+            <div class="card file-preview-item">
+                <div class="position-relative">
+                    <img src="${URL.createObjectURL(file)}" 
+                         class="card-img-top" 
+                         style="height: 150px; object-fit: cover;"
+                         alt="${file.name}">
+                    <button type="button" class="btn btn-danger btn-sm remove-file-btn" 
+                            onclick="removeFile(${index})">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+                <div class="card-body p-2">
+                    <h6 class="card-title small mb-1 text-truncate" title="${file.name}">
+                        ${file.name}
+                    </h6>
+                    <small class="text-muted">
+                        ${(file.size / (1024 * 1024)).toFixed(1)} MB
+                    </small>
+                </div>
+            </div>
+        `;
+        
+        previewContainer.appendChild(col);
+    });
+}
+
+/**
+ * Remove file from selection
+ */
+function removeFile(index) {
+    selectedFiles.splice(index, 1);
+    updateFilePreview();
+    updateUploadButton();
+    
+    // Clear file input
+    document.getElementById('fileInput').value = '';
+}
+
+/**
+ * Update upload button state
+ */
+function updateUploadButton() {
+    const uploadBtn = document.getElementById('uploadBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    
+    uploadBtn.disabled = selectedFiles.length === 0 || isUploading;
+    
+    if (selectedFiles.length > 0) {
+        clearBtn.style.display = 'inline-block';
+        uploadBtn.innerHTML = `
+            <i class="bi bi-cloud-upload me-2"></i>
+            Upload ${selectedFiles.length} Picture${selectedFiles.length !== 1 ? 's' : ''}
+        `;
+    } else {
+        clearBtn.style.display = 'none';
+        uploadBtn.innerHTML = `
+            <i class="bi bi-cloud-upload me-2"></i>
+            Upload Pictures
+        `;
+    }
+}
+
+/**
+ * Initialize form submission
+ */
+function initializeForm() {
+    const form = document.getElementById('uploadForm');
+    const clearBtn = document.getElementById('clearBtn');
+    
+    form.addEventListener('submit', handleFormSubmit);
+    clearBtn.addEventListener('click', clearAllFiles);
+}
+
+/**
+ * Handle form submission
+ */
+async function handleFormSubmit(e) {
+    e.preventDefault();
+    
+    if (selectedFiles.length === 0 || isUploading) {
+        return;
+    }
+    
+    isUploading = true;
+    updateUploadButton();
+    
+    try {
+        await uploadFiles();
+    } catch (error) {
+        console.error('Upload error:', error);
+        showAlert('Upload failed. Please try again.', 'danger');
+    } finally {
+        isUploading = false;
+        updateUploadButton();
+    }
+}
+
+/**
+ * Upload files to server
+ */
+async function uploadFiles() {
+    const description = document.getElementById('description').value;
+    const progressArea = document.getElementById('uploadProgress');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const progressPercent = document.getElementById('progressPercent');
+    
+    // Show progress
+    progressArea.style.display = 'block';
+    progressText.textContent = 'Preparing upload...';
+    progressPercent.textContent = '0%';
+    
+    // Create FormData
+    const formData = new FormData();
+    
+    selectedFiles.forEach(file => {
+        formData.append('pictures', file);
+    });
+    
+    if (description) {
+        formData.append('description', description);
+    }
+    
+    try {
+        // Upload with progress tracking
+        const response = await fetch('/api/pictures', {
+            method: 'POST',
+            body: formData
+        });
+        
+        // Simulate progress for now (real progress would need XMLHttpRequest)
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+            progress += Math.random() * 30;
+            if (progress > 95) progress = 95;
+            
+            progressBar.style.width = progress + '%';
+            progressPercent.textContent = Math.round(progress) + '%';
+            progressText.textContent = 'Uploading files...';
+        }, 200);
+        
+        const result = await response.json();
+        
+        // Clear progress interval
+        clearInterval(progressInterval);
+        
+        // Complete progress
+        progressBar.style.width = '100%';
+        progressPercent.textContent = '100%';
+        progressText.textContent = 'Upload complete!';
+        
+        if (result.success) {
+            // Show success message
+            showAlert(`Successfully uploaded ${result.pictures.length} picture(s)!`, 'success');
+            
+            // Reset form after delay
+            setTimeout(() => {
+                resetForm();
+            }, 2000);
+            
+        } else {
+            throw new Error(result.message || 'Upload failed');
+        }
+        
+    } catch (error) {
+        console.error('Upload error:', error);
+        throw error;
+    }
+}
+
+/**
+ * Clear all selected files
+ */
+function clearAllFiles() {
+    selectedFiles = [];
+    document.getElementById('fileInput').value = '';
+    updateFilePreview();
+    updateUploadButton();
+    
+    // Hide progress if shown
+    document.getElementById('uploadProgress').style.display = 'none';
+}
+
+/**
+ * Reset form to initial state
+ */
+function resetForm() {
+    clearAllFiles();
+    document.getElementById('description').value = '';    document.getElementById('uploadProgress').style.display = 'none';
+}
+</script>
+
+    </main>
+    
+    <!-- Footer -->
+    <footer class="bg-light text-center text-muted py-4 mt-5">
+        <div class="container">
+            <p class="mb-0">
+                &copy; <%= new Date().getFullYear() %> Picture Database. 
+                Built with <i class="bi bi-heart-fill text-danger"></i> using Node.js & Express.
+            </p>
+        </div>
+    </footer>
+    
+    <!-- Loading Spinner Modal -->
+    <div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 bg-transparent">
+                <div class="modal-body text-center">
+                    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3 text-white fw-bold">Processing...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap 5 JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JavaScript -->
+    <script src="/static/js/main.js"></script>
+</body>
+</html>

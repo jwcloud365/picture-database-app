@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> | Picture Database</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="/static/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="bi bi-images me-2"></i>
+                Picture Database
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/">
+                            <i class="bi bi-house me-1"></i>
+                            Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/upload">
+                            <i class="bi bi-cloud-upload me-1"></i>
+                            Upload
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Main Content -->
+    <main class="container mt-4">
+        <!-- Alert Messages -->
+        <div id="alertContainer"></div>
+
+<% 
+// Set page-specific variables
+const pageTitle = title || 'Picture Gallery';
+%>
+
+<!-- Page Header -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="display-6 mb-1">
+                    <i class="bi bi-images text-primary me-2"></i>
+                    Picture Gallery
+                </h1>
+                <p class="text-muted">
+                    <span id="pictureCount"><%= pictures.length %></span> 
+                    picture<%= pictures.length !== 1 ? 's' : '' %> in your collection
+                </p>
+            </div>
+            <div>
+                <a href="/upload" class="btn btn-primary btn-lg">
+                    <i class="bi bi-plus-circle me-2"></i>
+                    Upload Pictures
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search and Filter -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="input-group">
+            <span class="input-group-text">
+                <i class="bi bi-search"></i>
+            </span>
+            <input type="text" class="form-control" id="searchInput" placeholder="Search pictures by name or description...">
+            <button class="btn btn-outline-secondary" type="button" id="clearSearch">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="d-flex gap-2 justify-content-end">
+            <select class="form-select" id="sortBy" style="width: auto;">
+                <option value="upload_date">Newest First</option>
+                <option value="upload_date_asc">Oldest First</option>
+                <option value="original_name">Name A-Z</option>
+                <option value="original_name_desc">Name Z-A</option>
+                <option value="file_size">Largest First</option>
+                <option value="file_size_asc">Smallest First</option>
+            </select>
+            <button class="btn btn-outline-primary" id="gridViewBtn" title="Grid View">
+                <i class="bi bi-grid-3x3-gap"></i>
+            </button>
+            <button class="btn btn-outline-primary" id="listViewBtn" title="List View">
+                <i class="bi bi-list"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Pictures Grid/List -->
+<div id="picturesContainer">
+    <% if (pictures.length === 0) { %>
+        <!-- Empty State -->
+        <div class="text-center py-5">
+            <div class="mb-4">
+                <i class="bi bi-images display-1 text-muted"></i>
+            </div>
+            <h3 class="text-muted mb-3">No Pictures Yet</h3>
+            <p class="text-muted mb-4">Start building your picture collection by uploading your first image.</p>
+            <a href="/upload" class="btn btn-primary btn-lg">
+                <i class="bi bi-cloud-upload me-2"></i>
+                Upload Your First Picture
+            </a>
+        </div>
+    <% } else { %>
+        <!-- Pictures Grid -->
+        <div class="row" id="picturesGrid">
+            <% pictures.forEach(picture => { %>
+                <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 col-12 mb-4 picture-item" 
+                     data-id="<%= picture.id %>"
+                     data-name="<%= picture.original_name.toLowerCase() %>"
+                     data-description="<%= picture.description.toLowerCase() %>"
+                     data-upload-date="<%= picture.upload_date %>"
+                     data-file-size="<%= picture.file_size %>">
+                    
+                    <div class="card picture-card h-100 shadow-sm">
+                        <!-- Picture Thumbnail -->
+                        <div class="position-relative">
+                            <img src="/uploads/thumbnails/<%= picture.filename %>" 
+                                 class="card-img-top picture-thumbnail" 
+                                 alt="<%= picture.original_name %>"
+                                 style="height: 200px; object-fit: cover; cursor: pointer;"
+                                 onclick="openPictureModal('<%= picture.id %>')">
+                            
+                            <!-- File Size Badge -->
+                            <span class="badge bg-dark position-absolute top-0 end-0 m-2">
+                                <%= (picture.file_size / (1024 * 1024)).toFixed(1) %> MB
+                            </span>
+                            
+                            <!-- Actions Overlay -->
+                            <div class="picture-actions position-absolute top-0 start-0 m-2">
+                                <div class="btn-group-vertical" role="group">
+                                    <button class="btn btn-sm btn-light opacity-75" 
+                                            onclick="editDescription(<%= picture.id %>)"
+                                            title="Edit Description">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger opacity-75" 
+                                            onclick="deletePicture(<%= picture.id %>)"
+                                            title="Delete Picture">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Picture Info -->
+                        <div class="card-body p-3">
+                            <h6 class="card-title mb-2 text-truncate" title="<%= picture.original_name %>">
+                                <%= picture.original_name %>
+                            </h6>
+                            
+                            <% if (picture.description) { %>
+                                <p class="card-text text-muted small mb-2" style="height: 2.5em; overflow: hidden;">
+                                    <%= picture.description %>
+                                </p>
+                            <% } else { %>
+                                <p class="card-text text-muted fst-italic small mb-2">No description</p>
+                            <% } %>
+                            
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar me-1"></i>
+                                    <%= new Date(picture.upload_date).toLocaleDateString() %>
+                                </small>
+                                <small class="text-muted">
+                                    <%= picture.width %>×<%= picture.height %>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <% }); %>
+        </div>
+    <% } %>
+</div>
+
+<!-- Load More Button (for pagination) -->
+<div class="text-center mt-4" id="loadMoreContainer" style="display: none;">
+    <button class="btn btn-outline-primary" id="loadMoreBtn">
+        <i class="bi bi-arrow-down-circle me-2"></i>
+        Load More Pictures
+    </button>
+</div>
+
+<!-- Picture Detail Modal -->
+<div class="modal fade" id="pictureModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="pictureModalTitle">Picture Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div id="pictureModalContent">
+                    <!-- Content will be loaded here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x me-1"></i>
+                    Close
+                </button>
+                <button type="button" class="btn btn-primary" id="editPictureBtn">
+                    <i class="bi bi-pencil me-1"></i>
+                    Edit Description
+                </button>
+                <button type="button" class="btn btn-danger" id="deletePictureBtn">
+                    <i class="bi bi-trash me-1"></i>
+                    Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Description Modal -->
+<div class="modal fade" id="editDescriptionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-pencil me-2"></i>
+                    Edit Description
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editDescriptionForm">
+                    <div class="mb-3">
+                        <label for="descriptionInput" class="form-label">Description</label>
+                        <textarea class="form-control" id="descriptionInput" rows="4" 
+                                  placeholder="Enter a description for this picture..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x me-1"></i>
+                    Cancel
+                </button>
+                <button type="button" class="btn btn-primary" id="saveDescriptionBtn">
+                    <i class="bi bi-check me-1"></i>
+                    Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom CSS for this page -->
+<style>
+    .picture-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .picture-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+    }
+    
+    .picture-actions {
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .picture-card:hover .picture-actions {
+        opacity: 1;
+    }
+    
+    .picture-thumbnail {
+        transition: transform 0.3s ease;
+    }
+    
+    .picture-thumbnail:hover {
+        transform: scale(1.05);
+    }
+    
+    #searchInput:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+</style>
+
+<!-- Page-specific JavaScript -->
+<script>
+// Global variables for picture management
+let currentPictureId = null;
+let allPictures = <%- JSON.stringify(pictures) %>;
+let filteredPictures = [...allPictures];
+
+// Initialize page functionality
+document.addEventListener('DOMContentLoaded', function() {
+    initializeSearch();
+    initializeSorting();
+    initializeViewToggle();
+    initializeModals();
+});
+
+/**
+ * Initialize search functionality
+ */
+function initializeSearch() {
+    const searchInput = document.getElementById('searchInput');
+    const clearSearchBtn = document.getElementById('clearSearch');
+    
+    let searchTimeout;
+    
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            filterPictures();
+        }, 300);
+    });
+    
+    clearSearchBtn.addEventListener('click', function() {
+        searchInput.value = '';
+        filterPictures();
+    });
+}
+
+/**
+ * Filter pictures based on search term
+ */
+function filterPictures() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const pictureItems = document.querySelectorAll('.picture-item');
+    
+    pictureItems.forEach(item => {
+        const name = item.dataset.name;
+        const description = item.dataset.description;
+        
+        if (name.includes(searchTerm) || description.includes(searchTerm)) {
+            item.style.display = 'block';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+    
+    updatePictureCount();
+}
+
+/**
+ * Update visible picture count
+ */
+function updatePictureCount() {
+    const visibleItems = document.querySelectorAll('.picture-item[style*="display: block"], .picture-item:not([style*="display: none"])');
+    const countElement = document.getElementById('pictureCount');
+    countElement.textContent = visibleItems.length;
+}
+
+/**
+ * Initialize sorting functionality
+ */
+function initializeSorting() {
+    const sortSelect = document.getElementById('sortBy');
+    
+    sortSelect.addEventListener('change', function() {
+        sortPictures(this.value);
+    });
+}
+
+/**
+ * Sort pictures based on selected criteria
+ */
+function sortPictures(sortBy) {
+    const container = document.getElementById('picturesGrid');
+    const items = Array.from(container.children);
+    
+    items.sort((a, b) => {
+        let aValue, bValue;
+        
+        switch(sortBy) {
+            case 'upload_date':
+                aValue = new Date(a.dataset.uploadDate);
+                bValue = new Date(b.dataset.uploadDate);
+                return bValue - aValue; // Newest first
+                
+            case 'upload_date_asc':
+                aValue = new Date(a.dataset.uploadDate);
+                bValue = new Date(b.dataset.uploadDate);
+                return aValue - bValue; // Oldest first
+                
+            case 'original_name':
+                aValue = a.dataset.name;
+                bValue = b.dataset.name;
+                return aValue.localeCompare(bValue); // A-Z
+                
+            case 'original_name_desc':
+                aValue = a.dataset.name;
+                bValue = b.dataset.name;
+                return bValue.localeCompare(aValue); // Z-A
+                
+            case 'file_size':
+                aValue = parseInt(a.dataset.fileSize);
+                bValue = parseInt(b.dataset.fileSize);
+                return bValue - aValue; // Largest first
+                
+            case 'file_size_asc':
+                aValue = parseInt(a.dataset.fileSize);
+                bValue = parseInt(b.dataset.fileSize);
+                return aValue - bValue; // Smallest first
+                
+            default:
+                return 0;
+        }
+    });
+    
+    // Re-append sorted items
+    items.forEach(item => container.appendChild(item));
+}
+
+/**
+ * Initialize view toggle (grid/list)
+ */
+function initializeViewToggle() {
+    const gridBtn = document.getElementById('gridViewBtn');
+    const listBtn = document.getElementById('listViewBtn');
+    
+    gridBtn.addEventListener('click', () => setView('grid'));
+    listBtn.addEventListener('click', () => setView('list'));
+}
+
+/**
+ * Set view mode (grid or list)
+ */
+function setView(mode) {
+    const gridBtn = document.getElementById('gridViewBtn');
+    const listBtn = document.getElementById('listViewBtn');
+    const container = document.getElementById('picturesGrid');
+    
+    if (mode === 'grid') {
+        gridBtn.classList.add('active');
+        listBtn.classList.remove('active');
+        container.className = 'row';
+        
+        // Reset column classes for grid view
+        document.querySelectorAll('.picture-item').forEach(item => {
+            item.className = 'col-xl-2 col-lg-3 col-md-4 col-sm-6 col-12 mb-4 picture-item';
+        });
+    } else {
+        listBtn.classList.add('active');
+        gridBtn.classList.remove('active');
+        container.className = 'row';
+        
+        // Set column classes for list view
+        document.querySelectorAll('.picture-item').forEach(item => {
+            item.className = 'col-12 mb-3 picture-item';
+        });
+    }
+}
+
+/**
+ * Initialize modal functionality
+ */
+function initializeModals() {
+    // Initialize Bootstrap modals
+    window.pictureModal = new bootstrap.Modal(document.getElementById('pictureModal'));
+    window.editDescriptionModal = new bootstrap.Modal(document.getElementById('editDescriptionModal'));
+    window.deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    
+    // Set up modal event handlers
+    document.getElementById('saveDescriptionBtn').addEventListener('click', saveDescription);
+    document.getElementById('confirmDelete').addEventListener('click', confirmDelete);
+}
+
+/**
+ * Open picture in modal
+ */
+function openPictureModal(pictureId) {
+    const picture = allPictures.find(p => p.id == pictureId);
+    if (!picture) return;
+    
+    currentPictureId = pictureId;
+    
+    const modalTitle = document.getElementById('pictureModalTitle');
+    const modalContent = document.getElementById('pictureModalContent');
+    
+    modalTitle.textContent = picture.original_name;
+    
+    modalContent.innerHTML = `
+        <img src="/uploads/${picture.filename}" 
+             class="img-fluid rounded mb-3" 
+             alt="${picture.original_name}"
+             style="max-height: 70vh;">
+        
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <h6>Description:</h6>
+                <p class="text-muted">${picture.description || 'No description'}</p>
+            </div>
+            <div class="col-md-6">
+                <h6>Details:</h6>
+                <ul class="list-unstyled text-muted">
+                    <li><strong>Size:</strong> ${(picture.file_size / (1024 * 1024)).toFixed(2)} MB</li>
+                    <li><strong>Dimensions:</strong> ${picture.width} × ${picture.height}</li>
+                    <li><strong>Type:</strong> ${picture.mime_type}</li>
+                    <li><strong>Uploaded:</strong> ${new Date(picture.upload_date).toLocaleString()}</li>
+                </ul>
+            </div>
+        </div>
+    `;
+    
+    pictureModal.show();
+}
+
+/**
+ * Edit picture description
+ */
+function editDescription(pictureId) {
+    const picture = allPictures.find(p => p.id == pictureId);
+    if (!picture) return;
+    
+    currentPictureId = pictureId;
+    
+    document.getElementById('descriptionInput').value = picture.description || '';
+    editDescriptionModal.show();
+}
+
+/**
+ * Save description changes
+ */
+async function saveDescription() {
+    const description = document.getElementById('descriptionInput').value;
+    
+    try {
+        showLoading(true);
+        
+        const response = await fetch(`/api/pictures/${currentPictureId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ description })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Update local data
+            const picture = allPictures.find(p => p.id == currentPictureId);
+            if (picture) {
+                picture.description = description;
+            }
+            
+            // Reload page to show changes
+            location.reload();
+        } else {
+            showAlert('Error updating description: ' + result.message, 'danger');
+        }
+        
+    } catch (error) {
+        console.error('Error updating description:', error);
+        showAlert('Failed to update description', 'danger');
+    } finally {
+        showLoading(false);
+        editDescriptionModal.hide();
+    }
+}
+
+/**
+ * Delete picture
+ */
+function deletePicture(pictureId) {
+    currentPictureId = pictureId;
+    deleteModal.show();
+}
+
+/**
+ * Confirm picture deletion
+ */
+async function confirmDelete() {
+    try {
+        showLoading(true);
+        
+        const response = await fetch(`/api/pictures/${currentPictureId}`, {
+            method: 'DELETE'
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showAlert('Picture deleted successfully', 'success');
+            // Remove from page
+            document.querySelector(`[data-id="${currentPictureId}"]`).remove();
+            updatePictureCount();
+        } else {
+            showAlert('Error deleting picture: ' + result.message, 'danger');
+        }
+        
+    } catch (error) {
+        console.error('Error deleting picture:', error);
+        showAlert('Failed to delete picture', 'danger');
+    } finally {
+        showLoading(false);
+        deleteModal.hide();    }
+}
+</script>
+
+    </main>
+    
+    <!-- Footer -->
+    <footer class="bg-light text-center text-muted py-4 mt-5">
+        <div class="container">
+            <p class="mb-0">
+                &copy; <%= new Date().getFullYear() %> Picture Database. 
+                Built with <i class="bi bi-heart-fill text-danger"></i> using Node.js & Express.
+            </p>
+        </div>
+    </footer>
+    
+    <!-- Loading Spinner Modal -->
+    <div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 bg-transparent">
+                <div class="modal-body text-center">
+                    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3 text-white fw-bold">Processing...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-exclamation-triangle text-warning me-2"></i>
+                        Confirm Deletion
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete this picture?</p>
+                    <p class="text-muted small">This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x me-1"></i>
+                        Cancel
+                    </button>
+                    <button type="button" class="btn btn-danger" id="confirmDelete">
+                        <i class="bi bi-trash me-1"></i>
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap 5 JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JavaScript -->
+    <script src="/static/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+{
+  "name": "picture-database-app",
+  "version": "1.0.0",
+  "description": "A modern web application for managing a personal picture database with upload, view, edit, and delete functionality",
+  "main": "server/app.js",  "scripts": {
+    "start": "node server/app.js",
+    "dev": "nodemon server/app.js",
+    "test": "node test.js",
+    "quick-start": "node start.js",
+    "db:init": "node -e \"require('./server/database/connection').initialize().then(() => console.log('Database initialized')).catch(console.error).finally(() => process.exit())\"",
+    "lint": "eslint server/ public/js/ --ext .js"
+  },
+  "keywords": [
+    "pictures",
+    "database",
+    "upload",
+    "express",
+    "sqlite",
+    "nodejs"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "ejs": "^3.1.9",
+    "express": "^4.18.2",
+    "multer": "^1.4.5-lts.1",
+    "sharp": "^0.32.6",
+    "sqlite3": "^5.1.6",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.52.0",
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
