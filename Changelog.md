@@ -1,5 +1,32 @@
 # Changelog
 
+## 2025-06-20 - Enhanced Image Upload Preview Functionality
+
+### Added
+- ✅ Enhanced image upload preview with loading states and error handling
+- ✅ Memory management for object URLs to prevent memory leaks
+- ✅ Asynchronous preview generation with proper error handling
+- ✅ Visual loading indicators while generating previews
+- ✅ Graceful error display for failed previews or non-image files
+- ✅ Automatic cleanup of object URLs on file removal and page unload
+- ✅ Improved CSS animations and hover effects for preview cards
+- ✅ Better user feedback during preview generation
+
+### Technical Improvements
+- **Memory Management**: Object URLs are now properly created and revoked to prevent memory leaks
+- **Error Handling**: Graceful handling of preview generation failures and non-image files
+- **Loading States**: Visual feedback during preview generation with spinners
+- **Performance**: Asynchronous preview generation to avoid blocking the UI
+- **User Experience**: Enhanced animations and hover effects for better interactivity
+
+### Enhanced Upload Preview Features
+- [x] Asynchronous image preview generation with loading indicators
+- [x] Error handling for failed previews and non-image files
+- [x] Memory management with proper object URL cleanup
+- [x] Visual feedback with loading spinners and error states
+- [x] Improved animations and hover effects
+- [x] Automatic cleanup on file removal and page unload
+
 ## 2025-06-20 - Phase 1 Complete: Core Backend Setup
 
 ### Added
