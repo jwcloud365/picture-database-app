@@ -174,6 +174,7 @@
     
     .file-preview-item {
         transition: all 0.3s ease;
+        animation: fadeInUp 0.4s ease-out;
     }
     
     .file-preview-item:hover {
@@ -192,6 +193,36 @@
         align-items: center;
         justify-content: center;
         font-size: 12px;
+        opacity: 0.8;
+        transition: opacity 0.2s ease;
+    }
+    
+    .remove-file-btn:hover {
+        opacity: 1;
+    }
+    
+    .preview-loading {
+        transition: all 0.3s ease;
+    }
+    
+    .progress {
+        height: 10px;
+    }
+    
+    .upload-success {
+        animation: fadeInUp 0.5s ease;
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
     }
     
     .progress {
@@ -225,6 +256,19 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeDropZone();
     initializeFileInput();
     initializeForm();
+});
+
+// Clean up object URLs when page is unloaded to prevent memory leaks
+window.addEventListener('beforeunload', function() {
+    const previewContainer = document.getElementById('filePreviewContainer');
+    if (previewContainer) {
+        const images = previewContainer.querySelectorAll('img[data-object-url]');
+        images.forEach(img => {
+            if (img.dataset.objectUrl) {
+                URL.revokeObjectURL(img.dataset.objectUrl);
+            }
+        });
+    }
 });
 
 /**
@@ -342,6 +386,12 @@ function updateFilePreview() {
     const previewArea = document.getElementById('filePreviewArea');
     const previewContainer = document.getElementById('filePreviewContainer');
     
+    // Clean up any existing object URLs to prevent memory leaks
+    const existingImages = previewContainer.querySelectorAll('img[src^="blob:"]');
+    existingImages.forEach(img => {
+        URL.revokeObjectURL(img.src);
+    });
+    
     if (selectedFiles.length === 0) {
         previewArea.style.display = 'none';
         return;
@@ -354,13 +404,16 @@ function updateFilePreview() {
         const col = document.createElement('div');
         col.className = 'col-md-6 col-lg-4 mb-3';
         
+        // Create preview card with loading placeholder
         col.innerHTML = `
             <div class="card file-preview-item">
                 <div class="position-relative">
-                    <img src="${URL.createObjectURL(file)}" 
-                         class="card-img-top" 
-                         style="height: 150px; object-fit: cover;"
-                         alt="${file.name}">
+                    <div class="preview-loading d-flex align-items-center justify-content-center bg-light" 
+                         style="height: 150px;">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status">
+                            <span class="visually-hidden">Loading preview...</span>
+                        </div>
+                    </div>
                     <button type="button" class="btn btn-danger btn-sm remove-file-btn" 
                             onclick="removeFile(${index})">
                         <i class="bi bi-x"></i>
@@ -378,13 +431,87 @@ function updateFilePreview() {
         `;
         
         previewContainer.appendChild(col);
+        
+        // Generate preview asynchronously with error handling
+        generateImagePreview(file, col, index);
     });
+}
+
+/**
+ * Generate image preview with error handling and loading states
+ */
+function generateImagePreview(file, container, index) {
+    try {
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            showPreviewError(container, 'Not an image file');
+            return;
+        }
+        
+        // Create object URL
+        const objectURL = URL.createObjectURL(file);
+        
+        // Create image element
+        const img = document.createElement('img');
+        img.className = 'card-img-top';
+        img.style.cssText = 'height: 150px; object-fit: cover;';
+        img.alt = file.name;
+        
+        // Handle successful load
+        img.onload = function() {
+            const loadingDiv = container.querySelector('.preview-loading');
+            if (loadingDiv) {
+                loadingDiv.replaceWith(img);
+            }
+        };
+        
+        // Handle load error
+        img.onerror = function() {
+            URL.revokeObjectURL(objectURL);
+            showPreviewError(container, 'Failed to load preview');
+        };
+        
+        // Set source to trigger loading
+        img.src = objectURL;
+        
+        // Store object URL for cleanup
+        img.dataset.objectUrl = objectURL;
+        
+    } catch (error) {
+        console.error('Error generating preview for file:', file.name, error);
+        showPreviewError(container, 'Preview generation failed');
+    }
+}
+
+/**
+ * Show error state in preview
+ */
+function showPreviewError(container, message) {
+    const loadingDiv = container.querySelector('.preview-loading');
+    if (loadingDiv) {
+        loadingDiv.innerHTML = `
+            <div class="text-center text-muted">
+                <i class="bi bi-image" style="font-size: 2rem;"></i>
+                <div class="small mt-2">${message}</div>
+            </div>
+        `;
+    }
 }
 
 /**
  * Remove file from selection
  */
 function removeFile(index) {
+    // Clean up object URL for the removed file
+    const previewContainer = document.getElementById('filePreviewContainer');
+    const fileCards = previewContainer.children;
+    if (fileCards[index]) {
+        const img = fileCards[index].querySelector('img[data-object-url]');
+        if (img && img.dataset.objectUrl) {
+            URL.revokeObjectURL(img.dataset.objectUrl);
+        }
+    }
+    
     selectedFiles.splice(index, 1);
     updateFilePreview();
     updateUploadButton();
@@ -529,6 +656,15 @@ async function uploadFiles() {
  * Clear all selected files
  */
 function clearAllFiles() {
+    // Clean up all object URLs to prevent memory leaks
+    const previewContainer = document.getElementById('filePreviewContainer');
+    const images = previewContainer.querySelectorAll('img[data-object-url]');
+    images.forEach(img => {
+        if (img.dataset.objectUrl) {
+            URL.revokeObjectURL(img.dataset.objectUrl);
+        }
+    });
+    
     selectedFiles = [];
     document.getElementById('fileInput').value = '';
     updateFilePreview();
@@ -543,7 +679,8 @@ function clearAllFiles() {
  */
 function resetForm() {
     clearAllFiles();
-    document.getElementById('description').value = '';    document.getElementById('uploadProgress').style.display = 'none';
+    document.getElementById('description').value = '';
+    document.getElementById('uploadProgress').style.display = 'none';
 }
 </script>
 

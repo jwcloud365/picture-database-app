@@ -1,5 +1,50 @@
 # Changelog
 
+## 2025-06-20 - Image Upload Preview Enhancements
+
+### Enhanced Upload Experience
+- ✅ **Memory Management**: Fixed memory leaks in image preview functionality
+  - Added proper `URL.revokeObjectURL()` cleanup for blob URLs
+  - Cleanup occurs on file removal, form reset, and page unload
+  - Prevents browser memory accumulation during upload sessions
+
+- ✅ **Loading States**: Improved user feedback during preview generation
+  - Added spinner animations while previews are loading
+  - Asynchronous preview generation prevents UI blocking
+  - Smooth fade-in animations when previews complete
+
+- ✅ **Error Handling**: Robust error handling for preview failures
+  - Graceful handling of non-image files
+  - Preview error states with informative messages
+  - Fallback UI for failed preview generation
+
+- ✅ **Enhanced CSS**: Improved visual experience
+  - Added fadeInUp animations for preview cards
+  - Enhanced hover states with smooth transitions
+  - Better loading indicator styling
+
+### Technical Details
+**Before**: Memory leaks from uncleaned object URLs
+```javascript
+col.innerHTML = `<img src="${URL.createObjectURL(file)}" ...>`;
+```
+
+**After**: Proper memory management with cleanup
+```javascript
+const objectURL = URL.createObjectURL(file);
+img.onload = () => loadingDiv.replaceWith(img);
+img.onerror = () => {
+    URL.revokeObjectURL(objectURL);
+    showPreviewError(container, 'Failed to load preview');
+};
+```
+
+### Issues Resolved
+- Fixed memory leaks in image preview generation
+- Added loading states for better UX
+- Implemented proper error handling
+- Enhanced visual feedback and animations
+
 ## 2025-06-20 - Phase 1 Complete: Core Backend Setup
 
 ### Added
