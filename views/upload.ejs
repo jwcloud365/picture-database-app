@@ -420,8 +420,8 @@ function updateFilePreview() {
                     </button>
                 </div>
                 <div class="card-body p-2">
-                    <h6 class="card-title small mb-1 text-truncate" title="${file.name}">
-                        ${file.name}
+                    <h6 class="card-title small mb-1 text-truncate" title="${escapeHTML(file.name)}">
+                        ${escapeHTML(file.name)}
                     </h6>
                     <small class="text-muted">
                         ${(file.size / (1024 * 1024)).toFixed(1)} MB
@@ -435,6 +435,24 @@ function updateFilePreview() {
         // Generate preview asynchronously with error handling
         generateImagePreview(file, col, index);
     });
+
+/**
+ * Escape HTML special characters in a string
+ * @param {string} str - The string to escape
+ * @returns {string} - The escaped string
+ */
+function escapeHTML(str) {
+    return str.replace(/[&<>"']/g, function (char) {
+        const escapeMap = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        };
+        return escapeMap[char];
+    });
+}
 }
 
 /**
