@@ -469,11 +469,18 @@ function generateImagePreview(file, container, index) {
         // Create object URL
         const objectURL = URL.createObjectURL(file);
         
+        // Validate file content
+        if (!validateFileContent(file)) {
+            showPreviewError(container, 'Invalid file content');
+            URL.revokeObjectURL(objectURL);
+            return;
+        }
+        
         // Create image element
         const img = document.createElement('img');
         img.className = 'card-img-top';
         img.style.cssText = 'height: 150px; object-fit: cover;';
-        img.alt = file.name;
+        img.alt = escapeHTML(file.name);
         
         // Handle successful load
         img.onload = function() {
@@ -500,6 +507,7 @@ function generateImagePreview(file, container, index) {
         showPreviewError(container, 'Preview generation failed');
     }
 }
+
 
 /**
  * Show error state in preview
