@@ -101,7 +101,7 @@
 ### 4.1 Advanced UI Components
 - [ ] Create custom lightbox for full-size image viewing
 - [ ] Implement drag-and-drop file upload interface
-- [x] Add image upload preview before submission
+- [ ] Add image upload preview before submission
 - [ ] Create animated transitions and hover effects
 - [ ] Implement toast notifications for user feedback
 - [ ] Add pagination for large image collections
